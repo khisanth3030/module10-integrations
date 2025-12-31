@@ -35,17 +35,24 @@ public with sharing class DummyJSONCallout {
      */
 
 	public static void getDummyJSONUserFromId(String dummyUserId) {
-		// Create HTTP request to send.
-
+		// Create HTTP request to send. 
+		HttpRequest req = new HttpRequest();
+   
 		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
+		req.setEndpoint('https://dummyjson.com/users');
 
 		// Set the HTTP method to GET.
+		req.setMethod('GET');
 
 		// Send the HTTP request and get the response.
+		Http http = new Http();
+		HTTPResponse res = http.send(req);
+		System.debug(res.getBody());
 
 		// If the HTTP response code is successful, parse the JSON response and update the contact.
 		Contact cont = null;
-		upsert cont DummyJSON_Id__c; //insert/update from the JSON response using the external id (dummyUserId)
+		//upsert cont DummyJSON_Id__c; 
+		//insert/update from the JSON response using the external id (dummyUserId)
 	}
 
 	/* 
