@@ -48,11 +48,18 @@ public with sharing class DummyJSONCallout {
 		// Send the HTTP request and get the response.
 		Http http = new Http();
 		HTTPResponse res = http.send(req);
-		System.debug(res.getBody());
+		//System.debug(res.getBody());
+		//System.debug(res.getStatus());
+		//System.debug(res.getStatusCode());
 
 		// If the HTTP response code is successful, parse the JSON response and update the contact.
+		if(res.getStatusCode() < 200 || res.getStatusCode() >= 300) {
+			// Handle non-successful response
+			System.debug('Error: Received HTTP status code ' + res.getStatusCode());
+			return;
+		}
 		Contact cont = createContactFromJson(res.getBody());
-		system.debug(cont);
+		//system.debug(cont);
 		//upsert cont DummyJSON_Id__c; 
 		//insert/update from the JSON response using the external id (dummyUserId)
 	}
@@ -76,32 +83,35 @@ public with sharing class DummyJSONCallout {
 	private static Contact createContactFromJson(String jsonResponse) {
 		
 		// Deserialize the JSON string into map of primitive data types.
-		ContactInfo ci = ContactInfo.parse(jsonResponse);
+		Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
+		system.debug(jsonMap);
 
 		// Create a new contact from the JSON response.
 		Contact con = new Contact();
+
 		// Set the contact fields from the JSON response.
-		con.DummyJSON_Id__c = ci.id;
-		con.FirstName = ci.firstName;
-		con.LastName = ci.lastName;
-		con.Email = ci.email;
-		con.Phone = ci.phone;
-		con.Birthdate = Date.valueOf(ci.birthDate);
+		con.DummyJSON_Id__c = String.valueOf(jsonMap.get('id'));
+		con.FirstName = (String)jsonMap.get('firstName');
+		con.LastName = (String)jsonMap.get('lastName');
+		con.Email = (String)jsonMap.get('email');
+		con.Phone = (String)jsonMap.get('phone');
 
-		// Set the address fields on the contact.
+
+		con.Birthdate = Date.valueOf(jsonMap.get('birthDate'));
+
+
 	// Deserialize the address from the JSON response.
+		Map<String, Object> addressMap = (Map<String, Object>) jsonMap.get('address');
+		system.debug(addressMap);
 
-		
-		con.MailingStreet = ci.address.address;
-		con.MailingCity = ci.address.city;				
-		con.MailingPostalCode = ci.address.postalCode;
-		con.MailingState = ci.address.state;
-		con.MailingCountry = ci.address.country;
+		con.MailingStreet = (String)addressMap.get('address');
+		con.MailingCity = (String)addressMap.get('city');				
+		con.MailingPostalCode = (String)addressMap.get('postalCode');
+		con.MailingState = (String)addressMap.get('state');
+		con.MailingCountry = (String)addressMap.get('country');
 
-		system.debug(ci);
-		system.debug(con);
-		
 		//return contact
+		system.debug(con);
 		return con;
 	}
 
