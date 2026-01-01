@@ -39,8 +39,8 @@ public with sharing class DummyJSONCallout {
 		HttpRequest req = new HttpRequest();
    
 		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
-		//req.setEndpoint('https://dummyjson.com/users');
-		req.setEndpoint('callout:DummyJsonUser');
+		req.setEndpoint('https://dummyjson.com/users/' + dummyUserId);
+		//req.setEndpoint('callout:DummyJsonUser' + '/' + dummyUserId); // Example using Named Credential
 
 		// Set the HTTP method to GET.
 		req.setMethod('GET');
@@ -52,7 +52,8 @@ public with sharing class DummyJSONCallout {
 
 		// If the HTTP response code is successful, parse the JSON response and update the contact.
 		Contact cont = createContactFromJson(res.getBody());
-		upsert cont DummyJSON_Id__c; 
+		system.debug(cont);
+		//upsert cont DummyJSON_Id__c; 
 		//insert/update from the JSON response using the external id (dummyUserId)
 	}
 
@@ -80,25 +81,26 @@ public with sharing class DummyJSONCallout {
 		// Create a new contact from the JSON response.
 		Contact con = new Contact();
 		// Set the contact fields from the JSON response.
-		con.dummyJSON_Id__c = ci.jsonUserId;
+		con.DummyJSON_Id__c = ci.id;
 		con.FirstName = ci.firstName;
 		con.LastName = ci.lastName;
 		con.Email = ci.email;
 		con.Phone = ci.phone;
 		con.Birthdate = Date.valueOf(ci.birthDate);
 
-		// Deserialize the address from the JSON response.
-		/*
+		// Set the address fields on the contact.
+	// Deserialize the address from the JSON response.
+
+		
 		con.MailingStreet = ci.address.address;
-		con.MailingCity = ci.address.city;
+		con.MailingCity = ci.address.city;				
 		con.MailingPostalCode = ci.address.postalCode;
 		con.MailingState = ci.address.state;
 		con.MailingCountry = ci.address.country;
-*/
 
-		// Set the address fields on the contact.
-
-
+		system.debug(ci);
+		system.debug(con);
+		
 		//return contact
 		return con;
 	}
