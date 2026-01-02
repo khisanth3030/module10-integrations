@@ -60,7 +60,7 @@ public with sharing class DummyJSONCallout {
 		}
 		Contact cont = createContactFromJson(res.getBody());
 		//system.debug(cont);
-		//upsert cont DummyJSON_Id__c; 
+		upsert cont DummyJSON_Id__c; 
 		//insert/update from the JSON response using the external id (dummyUserId)
 	}
 
@@ -84,7 +84,7 @@ public with sharing class DummyJSONCallout {
 		
 		// Deserialize the JSON string into map of primitive data types.
 		Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
-		system.debug(jsonMap);
+		//system.debug(jsonMap);
 
 		// Create a new contact from the JSON response.
 		Contact con = new Contact();
@@ -96,13 +96,36 @@ public with sharing class DummyJSONCallout {
 		con.Email = (String)jsonMap.get('email');
 		con.Phone = (String)jsonMap.get('phone');
 
+		String strDate = (String)jsonMap.get('birthDate');
+		system.debug(strDate);
 
-		con.Birthdate = Date.valueOf(jsonMap.get('birthDate'));
+		List<String> parts = strDate.split('-');
+		Integer day = Integer.valueOf(parts[2]);
+		Integer month = Integer.valueOf(parts[1]);
+		Integer year = Integer.valueOf(parts[0]);
+		system.debug(parts);
+		system.debug(parts.size());
+		system.debug(Integer.valueOf(parts[2])); 
+		system.debug(Integer.valueOf(parts[1]));
+		system.debug(Integer.valueOf(parts[0]));
 
+		if (parts.size() == 3) {
+
+		try {
+			con.Birthdate = Date.newInstance(year, month, day);
+		} catch (TypeException e) {
+			// Handle the exception
+			System.debug('Error parsing date: ' + e.getMessage());
+			// Implement alternative parsing logic here
+
+			}
+		}
+		
+		system.debug(con.Birthdate);
 
 	// Deserialize the address from the JSON response.
 		Map<String, Object> addressMap = (Map<String, Object>) jsonMap.get('address');
-		system.debug(addressMap);
+		//system.debug(addressMap);
 
 		con.MailingStreet = (String)addressMap.get('address');
 		con.MailingCity = (String)addressMap.get('city');				
