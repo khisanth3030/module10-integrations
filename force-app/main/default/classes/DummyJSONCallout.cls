@@ -154,16 +154,34 @@ public with sharing class DummyJSONCallout {
 	
 	public static void postCreateDummyJSONUser(String contactId) {
 		// Create HTTP request to send.
+		HttpRequest req = new HttpRequest();
 
 		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
+   
+		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
+		req.setEndpoint('https://dummyjson.com/users/' + 'add');
+		//req.setEndpoint('callout:DummyJsonUser' + '/' + 'add'); 
+		// Example using Named Credential
 
 		// Set the HTTP method to POST.
+		req.setMethod('POST');
 
 		// Set the body using generateDummyJsonUserPayload method.
+		req.setBody(generateDummyJsonUserPayload(contactId));
 
 		// Send the HTTP request and get the response.
+		HttpResponse res = new Http().send(req);
 
 		// If the HTTP response code is successful, update the contact.
+		if(res.getStatusCode() < 200 || res.getStatusCode() >= 300) {
+			// Handle non-successful response
+			System.debug('Error: Received HTTP status code ' + res.getStatusCode());
+			return;
+		}
+		Contact conToUpdate = new Contact(
+			Id = contactId,
+			DummyJSON_Last_Updated__c = System.now()
+		);
 	}
 
 	/*
@@ -183,14 +201,24 @@ public with sharing class DummyJSONCallout {
      */
 	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
 	private static String generateDummyJsonUserPayload(String contactId) {
+	
 		// Query the contact to get the field values to generate the JSON payload.
-
+		Contact con = [SELECT Id, FirstName, LastName, Email, Phone FROM Contact WHERE Id = :contactId LIMIT 1];
+	
 		// Create a map of the field values.
+		Map<String, Object> payloadMap = new Map<String, Object>();
+		payloadMap.put('salesforceId', con.Id);
+		payloadMap.put('firstName', con.FirstName);
+		payloadMap.put('lastName', con.LastName);
+		payloadMap.put('email', con.Email);
+		payloadMap.put('phone', con.Phone);
 
 		// Serialize the map into a JSON string.
+		String jsonPayload = JSON.serialize(payloadMap);
+		
 		// Make sure to check that required contacts fields have a value. Default the value to unknown if it does not exists.
 		// Integration data can change over time. It is a best practice to add safeguards/validation to ensure the integration does not break.
 
-		return null;
+		return jsonPayload;
 	}
 }
