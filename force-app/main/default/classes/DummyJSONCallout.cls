@@ -22,7 +22,7 @@
  */
 
 public with sharing class DummyJSONCallout {
-
+	
 	/* 
 	 * Question 1
      * Fetches user information from an external system https://dummyjson.com/user/{id} ('DummyJsonUser') based on the provided dummy user ID. 
@@ -33,7 +33,14 @@ public with sharing class DummyJSONCallout {
 	 * 
      * @param dummyUserId The ID of the user in the external system to fetch data for.
      */
-
+	
+	public static void processDummyJSONUsersAsync(Set<String> ids) {
+        // Perform the batched callout logic here
+        for (String id : ids) {
+			getDummyJSONUserFromId(id);
+		}
+	}
+	@future(callout=true)
 	public static void getDummyJSONUserFromId(String dummyUserId) {
 		// Create HTTP request to send. 
 		HttpRequest req = new HttpRequest();
@@ -182,6 +189,7 @@ public with sharing class DummyJSONCallout {
 			Id = contactId,
 			DummyJSON_Last_Updated__c = System.now()
 		);
+		update conToUpdate;
 	}
 
 	/*

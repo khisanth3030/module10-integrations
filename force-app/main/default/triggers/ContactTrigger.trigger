@@ -29,7 +29,7 @@ trigger ContactTrigger on Contact(before insert, before update) {
 		// if DummyJSON_Id__c is less than or equal to 100, call the getDummyJSONUserFromId API
 
 		when BEFORE_INSERT {
-
+			Set<String> ids = new Set<String>();
 			for(Contact con : Trigger.new){
 		
 				if(con.DummyJSON_Id__c == null){
@@ -38,22 +38,24 @@ trigger ContactTrigger on Contact(before insert, before update) {
 				}
 				Integer dummyId = Integer.valueOf(con.DummyJSON_Id__c);		
 				if(dummyId <= 100){
-					DummyJSONCallout.getDummyJSONUserFromId(con.DummyJSON_Id__c);
+					ids.add(con.DummyJSON_Id__c);
 				}
-			}			
+			}		
+			DummyJSONCallout.processDummyJSONUsersAsync(ids);	
 	}
 		when BEFORE_UPDATE {
 			// call your before update handler
 			//When a contact is updated
 			// if DummyJSON_Id__c is greater than 100, call the postCreateDummyJSONUser API
-			
+			Set<String> ids = new Set<String>();
 			for(Contact con : Trigger.new){
 				Integer dummyId = Integer.valueOf(con.DummyJSON_Id__c);	
 				if(dummyId > 100){
-					DummyJSONCallout.postCreateDummyJSONUser(con.Id);
+					ids.add(con.Id);
+					
 				}
 			}
-			
+			DummyJSONCallout.postCreateDummyJSONUser(con.Id);
 		}
 		when AFTER_INSERT {
 			// call your after insert handler
