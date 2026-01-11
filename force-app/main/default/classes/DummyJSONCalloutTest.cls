@@ -3,7 +3,9 @@
  * Implement the DummyJSONCallout class to handle the callouts to the Dummy JSON API.
  */
 @IsTest
-public with sharing class DummyJSONCalloutTest {
+public with sharing class DummyJSONCalloutTest  {
+	
+
 	// This test method will test the getDummyJSONUserFromId future method with a mock HTTP response.
 	@IsTest
 	static void testGetDummyJSONUserFromId() {
@@ -66,13 +68,12 @@ public with sharing class DummyJSONCalloutTest {
 			Phone = '+123456789'
 		);
 		insert testContact;
-
 		// Set the mock callout class
 		Test.setMock(HttpCalloutMock.class, new DummyJSONCalloutMockGenerator());
 
 		// As this is a future method, we need to enclose it in Test.startTest() and Test.stopTest() to ensure it's executed in the test context.
 		Test.startTest();
-		DummyJSONCallout.postCreateDummyJSONUser(testContact.Id);
+		DummyJSONCallout.postCreateDummyJSONUser(new Set<Id>{testContact.Id});
 		Test.stopTest();
 
 		// Retrieve the updated contact to verify the changes
@@ -195,7 +196,7 @@ public with sharing class DummyJSONCalloutTest {
 
 		// Execute the future method within test context
 		Test.startTest();
-		DummyJSONCallout.postCreateDummyJSONUser(cont.Id);
+		DummyJSONCallout.postCreateDummyJSONUser(new Set<Id>{cont.Id});
 		Test.stopTest();
 
 		// Query the contact after the callout

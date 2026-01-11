@@ -21,7 +21,7 @@
  * https://developer.salesforce.com/docs/atlas.en-us.apexref.meta/apexref/apex_classes_restful_http_httprequest.htm
  */
 
-public with sharing class DummyJSONCallout {
+public with sharing class DummyJSONCallout implements Database.Batchable<SObject>, Database.AllowsCallouts{
 	
 	/* 
 	 * Question 1
@@ -34,13 +34,61 @@ public with sharing class DummyJSONCallout {
      * @param dummyUserId The ID of the user in the external system to fetch data for.
      */
 	
-	public static void processDummyJSONUsersAsync(Set<String> ids) {
-        // Perform the batched callout logic here
-        for (String id : ids) {
-			getDummyJSONUserFromId(id);
+		private Set<Id> contactIds;
+	
+		// Constructor to pass the Contact IDs
+		public DummyJSONCallout(Set<Id> contactIds) {
+			this.contactIds = contactIds;
 		}
-	}
-	@future(callout=true)
+	
+		// Start method to query the records
+		public Database.QueryLocator start(Database.BatchableContext context) {
+			return Database.getQueryLocator([
+				SELECT Id, FirstName, LastName, Phone, Email, Birthdate, 
+				DummyJSON_Id__c, DummyJSON_Last_Updated__c, 
+				MailingStreet, MailingCity, MailingPostalCode, MailingState, MailingCountry
+
+				FROM Contact
+				WHERE Id IN :contactIds
+			]);
+		}	
+
+	   // Execute method to process each batch
+	   public void execute(Database.BatchableContext context, List<Contact> scope) {
+        for (Contact con : scope) {
+            try {
+                // Perform the HTTP callout
+                HttpRequest req = new HttpRequest();
+                req.setEndpoint('https://dummyjson.com/users/add'); // Use Named Credential for best practices
+                req.setMethod('POST');
+                req.setBody(DummyJSONCallout.generateDummyJsonUserPayload(con.Id));
+
+                HttpResponse res = new Http().send(req);
+
+                // If the callout is successful, update the Contact
+                if (res.getStatusCode() >= 200 && res.getStatusCode() < 300) {
+                    if (Schema.sObjectType.Contact.isUpdateable()) {
+                        con.DummyJSON_Last_Updated__c = System.now();
+                    }
+                }
+            } catch (Exception e) {
+                System.debug('Error during callout: ' + e.getMessage());
+            }
+        }
+
+        // Update the processed Contacts
+        if (!scope.isEmpty() && Schema.sObjectType.Contact.isUpdateable()) {
+            update scope;
+        }
+    }
+	    // Finish method to perform post-batch processing
+		public void finish(Database.BatchableContext context) {
+			System.debug('Batch job completed.');
+		}
+
+
+	
+	
 	public static void getDummyJSONUserFromId(String dummyUserId) {
 		// Create HTTP request to send. 
 		HttpRequest req = new HttpRequest();
@@ -66,7 +114,9 @@ public with sharing class DummyJSONCallout {
 			return;
 		}
 		Contact cont = createContactFromJson(res.getBody());
-		//system.debug(cont);
+		cont.DummyJSON_Last_Updated__c = System.now();
+		system.debug(cont.DummyJSON_Last_Updated__c);
+		system.debug(cont);
 		upsert cont DummyJSON_Id__c; 
 		//insert/update from the JSON response using the external id (dummyUserId)
 	}
@@ -159,16 +209,21 @@ public with sharing class DummyJSONCallout {
      * @param contactId The Salesforce Contact ID used to generate the JSON payload for the external system.
      */
 	
-	public static void postCreateDummyJSONUser(String contactId) {
+	public static void postCreateDummyJSONUser(Set <Id> contactIds) {
+		// Perform the batched callout logic here
+		for (Id contactId : contactIds) {
+			postDummyJSONUserFromContactId(contactId);
+		}
+	}
+	
+	public static void postDummyJSONUserFromContactId(Id contactId) {
+
 		// Create HTTP request to send.
 		HttpRequest req = new HttpRequest();
 
 		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
-   
-		// Set the endpoint URL. Use direct URL or for best practices use Named Credential.
 		req.setEndpoint('https://dummyjson.com/users/' + 'add');
 		//req.setEndpoint('callout:DummyJsonUser' + '/' + 'add'); 
-		// Example using Named Credential
 
 		// Set the HTTP method to POST.
 		req.setMethod('POST');
@@ -179,17 +234,22 @@ public with sharing class DummyJSONCallout {
 		// Send the HTTP request and get the response.
 		HttpResponse res = new Http().send(req);
 
-		// If the HTTP response code is successful, update the contact.
-		if(res.getStatusCode() < 200 || res.getStatusCode() >= 300) {
-			// Handle non-successful response
-			System.debug('Error: Received HTTP status code ' + res.getStatusCode());
-			return;
-		}
-		Contact conToUpdate = new Contact(
-			Id = contactId,
-			DummyJSON_Last_Updated__c = System.now()
-		);
-		update conToUpdate;
+    // If the HTTP response code is successful, update the contact.
+    if (res.getStatusCode() >= 200 && res.getStatusCode() < 300) {
+        // Check if the user has permission to update Contact records
+        if (Schema.sObjectType.Contact.isUpdateable()) {
+            Contact conToUpdate = new Contact(
+                Id = contactId,
+                DummyJSON_Last_Updated__c = System.now()
+            );
+            update conToUpdate; // Perform the update only if the user has permission
+        } else {
+            System.debug('Error: User does not have permission to update Contact records.');
+        }
+    } else {
+        // Handle non-successful response
+        System.debug('Error: Received HTTP status code ' + res.getStatusCode());
+    }
 	}
 
 	/*
@@ -208,7 +268,7 @@ public with sharing class DummyJSONCallout {
      * @return String The JSON string payload that represents the Contact's details.
      */
 	@TestVisible // Allows test class to see this method. Since it is private, it would not be visible otherwise.
-	private static String generateDummyJsonUserPayload(String contactId) {
+	private static String generateDummyJsonUserPayload(Id contactId) {
 	
 		// Query the contact to get the field values to generate the JSON payload.
 		Contact con = [SELECT Id, FirstName, LastName, Email, Phone FROM Contact WHERE Id = :contactId LIMIT 1];
@@ -229,4 +289,6 @@ public with sharing class DummyJSONCallout {
 
 		return jsonPayload;
 	}
+ 
+
 }
