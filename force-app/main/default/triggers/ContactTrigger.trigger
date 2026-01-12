@@ -44,8 +44,7 @@ trigger ContactTrigger on Contact(before insert, before update) {
 				}
 			}		
 			if (!ids.isEmpty()) {
-				DummyJSONCallout = new DummyJSONCallout(ids);
-				Database.executeBatch(new DummyJSONCallout(ids), 50); // Batch size of 50
+				System.enqueueJob(new DummyJSONCallout(ids));
 			}	
 	}
 		when BEFORE_UPDATE {
