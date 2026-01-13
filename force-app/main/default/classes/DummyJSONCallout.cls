@@ -21,8 +21,7 @@
  * https://developer.salesforce.com/docs/atlas.en-us.apexref.meta/apexref/apex_classes_restful_http_httprequest.htm
  */
 
-public with sharing class DummyJSONCallout implements 
-Queueable, Database.AllowsCallouts{
+public with sharing class DummyJSONCallout implements Database.Batchable<SObject>, Database.AllowsCallouts{
 	
 	/* 
 	 * Question 1
@@ -42,18 +41,21 @@ Queueable, Database.AllowsCallouts{
 			this.contactIds = contactIds;
 		}
 	
-    // Execute method to process the job
-    public void execute(QueueableContext context) {
-        List<Contact> contacts = [		
+		// Start method to query the records
+		public Database.QueryLocator start(Database.BatchableContext context) {
+			return Database.getQueryLocator([
 				SELECT Id, FirstName, LastName, Phone, Email, Birthdate, 
 				DummyJSON_Id__c, DummyJSON_Last_Updated__c, 
 				MailingStreet, MailingCity, MailingPostalCode, MailingState, MailingCountry
+
 				FROM Contact
 				WHERE Id IN :contactIds
-			];
+			]);
 		}	
 
-        for (Contact con : contacts) {
+	   // Execute method to process each batch
+	   public void execute(Database.BatchableContext context, List<Contact> scope) {
+        for (Contact con : scope) {
             try {
                 // Perform the HTTP callout
                 HttpRequest req = new HttpRequest();
@@ -75,11 +77,15 @@ Queueable, Database.AllowsCallouts{
         }
 
         // Update the processed Contacts
-        if (!contacts.isEmpty() && Schema.sObjectType.Contact.isUpdateable()) {
-            update contacts;
+        if (!scope.isEmpty() && Schema.sObjectType.Contact.isUpdateable()) {
+            update scope;
         }
     }
- 
+	    // Finish method to perform post-batch processing
+		public void finish(Database.BatchableContext context) {
+			System.debug('Batch job completed.');
+		}
+
 
 	
 	
