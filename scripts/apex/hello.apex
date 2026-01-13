@@ -5,8 +5,8 @@
 // You can also execute the entire file by running the command:
 //     SFDX: Execute Anonymous Apex with Editor Contents
 
-//DummyJSONCallout.getDummyJSONUserFromId('1');
-
+DummyJSONCallout.getDummyJSONUserFromId('1');
+/*
 Contact testContact = new Contact(
     FirstName = 'John',
     LastName = 'Doe',
@@ -17,3 +17,4 @@ insert testContact;
 Set<Id> contactIds = new Set<Id>{testContact.Id};
 DummyJSONCallout.postCreateDummyJSONUser(contactIds);
 System.debug('Contact after callout: ' + contactIds);
+*/
