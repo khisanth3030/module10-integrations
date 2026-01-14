@@ -36,11 +36,9 @@
 	
 	public static void processDummyJSONUsersAsync(Set<String> ids) {
         // Perform the batched callout logic here
-        for (String id : ids) {
-			getDummyJSONUserFromId(id);
-		}
+ 
 	}
-	@future(callout=true)
+	//@future(callout=true)
 	public static void getDummyJSONUserFromId(String dummyUserId) {
 		// Create HTTP request to send. 
 		HttpRequest req = new HttpRequest();
@@ -67,8 +65,12 @@
 		}
 		Contact cont = createContactFromJson(res.getBody());
 		//system.debug(cont);
-		upsert cont DummyJSON_Id__c; 
-		//insert/update from the JSON response using the external id (dummyUserId)
+		if (Schema.sObjectType.Contact.isUpdateable()) {
+			upsert cont DummyJSON_Id__c;
+		} else {
+			System.debug('Insufficient permissions to update Contact records.');
+		}
+	//insert/update from the JSON response using the external id (dummyUserId)
 	}
 
 	/* 
@@ -158,7 +160,7 @@
      * 
      * @param contactId The Salesforce Contact ID used to generate the JSON payload for the external system.
      */
-	
+	@future(callout=true)
 	public static void postCreateDummyJSONUser(String contactId) {
 		// Create HTTP request to send.
 		HttpRequest req = new HttpRequest();
