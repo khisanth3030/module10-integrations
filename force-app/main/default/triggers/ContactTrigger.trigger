@@ -18,59 +18,8 @@
  */
 trigger ContactTrigger on Contact(before insert, before update) {
 
-	//DummyJSONCallout service = new DummyJSONCallout();
-
-	switch on Trigger.OperationType  {
-
-		// When a contact is inserted
-		// if DummyJSON_Id__c is null, generate a random number between 0 and 100 and set this as the contact's DummyJSON_Id__c value
+    // Create an instance of the handler class to manage the logic
+    ContactHelper conHelper = new ContactHelper();
+    conHelper.run();	
 	
-		//When a contact is inserted
-		// if DummyJSON_Id__c is less than or equal to 100, call the getDummyJSONUserFromId API
-
-		when BEFORE_INSERT {
-			//Set<String> ids = new Set<String>();
-			for(Contact con : Trigger.new){
-		
-				if(con.DummyJSON_Id__c == null){
-					Integer randomId = Math.mod(Math.abs(Crypto.getRandomInteger()), 101);
-					con.DummyJSON_Id__c = randomId.toString();
-				}
-				Integer dummyId = Integer.valueOf(con.DummyJSON_Id__c);		
-				if(dummyId <= 100){
-					DummyJSONCallout.getDummyJSONUserFromId(con.DummyJSON_Id__c);
-				}
-			}			
-	}
-		when BEFORE_UPDATE {
-			// call your before update handler
-			//When a contact is updated
-			// if DummyJSON_Id__c is greater than 100, call the postCreateDummyJSONUser API
-			Set<String> ids = new Set<String>();
-			for(Contact con : Trigger.new){
-				Integer dummyId = Integer.valueOf(con.DummyJSON_Id__c);	
-				if(dummyId > 100){
-					ids.add(con.Id);
-					
-				}
-			}
-			//DummyJSONCallout.postCreateDummyJSONUser(ids);
-		}
-		when AFTER_INSERT {
-			// call your after insert handler
-			
-		}
-		when AFTER_UPDATE {
-			// call your after update handler
-		}
-		when AFTER_DELETE {
-			// call your after delete handler
-		}
-		when BEFORE_DELETE {
-			// call your before delete handler
-		}
-		when else {
-			// this shouldn't happen
-		}
-	}
 }
