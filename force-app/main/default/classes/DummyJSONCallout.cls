@@ -38,7 +38,7 @@
         // Perform the batched callout logic here
  
 	}
-	//@future(callout=true)
+	
 	public static void getDummyJSONUserFromId(String dummyUserId) {
 		// Create HTTP request to send. 
 		HttpRequest req = new HttpRequest();
