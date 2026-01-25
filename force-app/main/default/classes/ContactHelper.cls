@@ -23,7 +23,8 @@ public with sharing class ContactHelper extends TriggerHandler{
 					con.DummyJSON_Id__c = randomId.toString();
 				}
 				Integer dummyId = Integer.valueOf(con.DummyJSON_Id__c);		
-				if(dummyId <= 100){
+				if(dummyId <= 100 && 
+				( con.DummyJSON_Last_Updated__c < date.today())){
 					DummyJSONCallout.getDummyJSONUserFromId(con.DummyJSON_Id__c);
 				}
 			}			
@@ -43,8 +44,8 @@ public with sharing class ContactHelper extends TriggerHandler{
 	
 			for(Contact con : contacts){
 				Integer dummyId = Integer.valueOf(con.DummyJSON_Id__c);	
-				if(dummyId > 100){
-					ids.add(con.Id);
+				if(dummyId > 100 ){
+					DummyJSONCallout.postCreateDummyJSONUser(con.Id);
 					
 				}
 			}

@@ -38,7 +38,7 @@
         // Perform the batched callout logic here
  
 	}
-	
+	@future(callout=true)
 	public static void getDummyJSONUserFromId(String dummyUserId) {
 		// Create HTTP request to send. 
 		HttpRequest req = new HttpRequest();
@@ -188,8 +188,8 @@
 			return;
 		}
 		Contact conToUpdate = new Contact(
-			Id = contactId,
-			DummyJSON_Last_Updated__c = System.now()
+			Id = (Id)contactId,
+			DummyJSON_Last_Updated__c = Datetime.now()
 		);
 		update conToUpdate;
 	}
